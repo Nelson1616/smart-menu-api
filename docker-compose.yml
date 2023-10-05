@@ -1,0 +1,32 @@
+version: "3.8"
+
+services:
+    # image project
+    app:
+        build:
+            context: .
+            dockerfile: Dockerfile
+        restart: unless-stopped
+        volumes:
+            - ./src:/src/
+        ports:
+            - "3016:3000"
+        networks:
+            - appnet
+    db:
+        image: mysql:8.0
+        restart: unless-stopped
+        environment:
+            MYSQL_DATABASE: 'db'
+            # Password for root access
+            MYSQL_ROOT_PASSWORD: 'password'
+        volumes:
+            - ./docker/mysql/dbdata:/var/lib/mysql
+        ports:
+            - "3388:3306"
+        networks:
+            - appnet
+
+networks:
+    appnet:
+        driver: bridge
