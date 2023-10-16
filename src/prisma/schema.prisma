@@ -1,12 +1,145 @@
 generator client {
-  provider = "prisma-client-js"
+    provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "mysql"
-  url      = env("DATABASE_URL")
+    provider = "mysql"
+    url      = env("DATABASE_URL")
 }
 
-model TestPrisma {
-  id      Int      @id @default(autoincrement())
+model Restaurant {
+    @@map("restaurants")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    name String @db.VarChar(255)
+    description String @db.VarChar(255)
+    image String @db.VarChar(255)
+    status_id Int @db.UnsignedInt @default(1)
+    primary_color String @db.VarChar(255) @default("#EC0032")
+    secondary_color String @db.VarChar(255) @default("#F7F7F7")
+    tertiaty_color String @db.VarChar(255) @default("#FFFFFF")
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    officials Official[]
+    products Product[]
+    tables Table[]
+}
+
+model Official {
+    @@map("officials")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    name String @db.VarChar(255)
+    email String @db.VarChar(255)
+    password String @db.VarChar(255)
+    status_id Int @db.UnsignedInt @default(1)
+    restaurant_id Int @db.UnsignedInt
+    image_id Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    restaurant Restaurant @relation(fields: [restaurant_id], references: [id])
+}
+
+model User {
+    @@map("users")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    name String @db.VarChar(255)
+    email String? @db.VarChar(255)
+    password String? @db.VarChar(255)
+    status_id Int @db.UnsignedInt @default(1)
+    image_id Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    sessionUsers SessionUser[]
+}
+
+model Product {
+    @@map("products")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    name String @db.VarChar(255)
+    description String @db.VarChar(255)
+    price Int @db.UnsignedInt
+    image String @db.VarChar(255)
+    status_id Int @db.UnsignedInt @default(1)
+    restaurant_id Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    restaurant Restaurant @relation(fields: [restaurant_id], references: [id])
+    sessionOrders SessionOrder[]
+}
+
+model Table {
+    @@map("tables")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    status_id Int @db.UnsignedInt @default(1)
+    restaurant_id Int @db.UnsignedInt
+    enter_code String @db.VarChar(255)
+    number Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    restaurant Restaurant @relation(fields: [restaurant_id], references: [id])
+    sessions Session[]
+}
+
+model Session {
+    @@map("sessions")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    status_id Int @db.UnsignedInt @default(1)
+    table_id Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    table Table @relation(fields: [table_id], references: [id])
+    sessionUsers SessionUser[]
+    sessionOrders SessionOrder[]
+}
+
+model SessionUser {
+    @@map("session_users")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    status_id Int @db.UnsignedInt @default(1)
+    session_id Int @db.UnsignedInt
+    user_id Int @db.UnsignedInt
+    amount_to_pay Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    session Session @relation(fields: [session_id], references: [id])
+    user User @relation(fields: [user_id], references: [id])
+    sessionWaiterCalls SessionWaiterCall[]
+    sessionOrderUser SessionOrderUser[]
+}
+
+model SessionWaiterCall {
+    @@map("session_waiter_calls")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    status_id Int @db.UnsignedInt @default(1)
+    session_user_id Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    sessionUser SessionUser @relation(fields: [session_user_id], references: [id])
+}
+
+model SessionOrder {
+    @@map("session_orders")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    status_id Int @db.UnsignedInt @default(1)
+    session_id Int @db.UnsignedInt
+    product_id Int @db.UnsignedInt
+    quantity Int @db.UnsignedInt
+    amount Int @db.UnsignedInt
+    amount_left Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    session Session @relation(fields: [session_id], references: [id])
+    product Product @relation(fields: [product_id], references: [id])
+    sessionOrderUser SessionOrderUser[]
+}
+
+model SessionOrderUser {
+    @@map("session_order_users")
+    id Int @id @db.UnsignedInt @default(autoincrement())
+    status_id Int @db.UnsignedInt @default(1)
+    session_order_id Int @db.UnsignedInt
+    session_user_id Int @db.UnsignedInt
+    created_at DateTime @default(now())
+    updated_at DateTime @default(now())
+    sessionOrder SessionOrder @relation(fields: [session_order_id], references: [id])
+    sessionUser SessionUser @relation(fields: [session_user_id], references: [id])
 }
