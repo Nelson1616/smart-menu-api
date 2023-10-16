@@ -11,6 +11,7 @@ services:
             - ./src:/src/
         ports:
             - "3016:3000"
+            - "8016:8080"
         networks:
             - appnet
     db:
