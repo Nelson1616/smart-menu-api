@@ -17,6 +17,8 @@ class SocketController {
 
     private notHelpWithOrderClientEvent = 'not_help_with_order';
 
+    private callWaiterClientEvent = 'call_waiter';
+
     private errorEvent : string = 'error';
 
     private sessionUsersEvent : string = 'users';
@@ -120,6 +122,23 @@ class SocketController {
                     }
 
                     await this.notHelpWithOrder(sessionUserId, sessionOrderId);
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
+
+            socket.on(this.callWaiterClientEvent, async data => {
+                try {
+                    console.log(`user trying to call waiter ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const sessionUserId = data.session_user_id;
+
+                    if (!sessionUserId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.callWaiter(sessionUserId);
                 }
                 catch (e) {
                     this.onError(socket, (e as Error).message);
@@ -265,6 +284,14 @@ class SocketController {
 
         this.io.to(this.sessionOrdersRoom(session.table.restaurant_id, session.table.id))
             .emit(this.sessionOrdersEvent, await SessionOrdersService.getBySession(sessionId));
+    }
+
+    async callWaiter(sessionUserId : number) {
+        await prisma.sessionWaiterCall.create({
+            data: {
+                session_user_id: sessionUserId
+            }
+        });
     }
 }
 
