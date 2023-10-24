@@ -40,7 +40,12 @@ class SessionUserService {
                 session_id: sessionId,
             },
             include: {
-                user : true
+                user : true,
+                session: {
+                    include: {
+                        table: true
+                    }
+                }
             }
         });
 

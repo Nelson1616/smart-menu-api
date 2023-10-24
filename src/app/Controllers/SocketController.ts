@@ -12,8 +12,14 @@ class SocketController {
 
     private sessionUsersEvent : string = 'users';
 
+    private sessionOrdersEvent : string = 'orders';
+
     private sessionUsersRoom(restaurantId : number, tableId : number) : string {
         return `restaurant_${restaurantId}_table_${tableId}_users`;
+    }
+
+    private sessionOrdersRoom(restaurantId : number, tableId : number) : string {
+        return `restaurant_${restaurantId}_table_${tableId}_orders`;
     }
 
     constructor(io : Server) {
@@ -24,18 +30,35 @@ class SocketController {
 
     private init() {
         this.io.on('connection', async (socket) => {
-            try {
-                console.log(`user of id ${socket.id} connected`);
+            console.log(`user of id ${socket.id} connected`);
+    
+            socket.on('disconnect', () => {
+                console.log(`user of id ${socket.id} disconnected`);
+            });
         
-                socket.on('disconnect', () => {
-                    console.log(`user of id ${socket.id} disconnected`);
-                });
-            
-                socket.on('message', (msg) => {
-                    console.log(`message from user ${socket.id}: ${msg}`);
-                    socket.broadcast.emit('message', `message from user ${socket.id}: ${msg}`);
-                });
-            
+            socket.on('message', (msg) => {
+                console.log(`message from user ${socket.id}: ${msg}`);
+                socket.broadcast.emit('message', `message from user ${socket.id}: ${msg}`);
+            });
+
+            socket.on('join', data => {
+                try {
+                    console.log(`user trying to join ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const sessionUserId = data.session_user_id;
+
+                    if (sessionUserId == null) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    this.insertInSessionOrdersRoom(socket, sessionUserId);
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
+
+            try {
                 const tableCode = socket.handshake.headers.table_code;
             
                 if (tableCode == null) {
@@ -44,15 +67,7 @@ class SocketController {
                     throw new Error('a table code is necessary to connect');
                 }
 
-                const table = await this.getTableDataByCode(tableCode as string);
-
-                socket.join(this.sessionUsersRoom(table.restaurant.id, table.id));
-
-                const activeSession = await SessionService.getActiveSession(table.id);
-
-                if (activeSession != null) {
-                    this.updateSessionUsers(activeSession.id);
-                }
+                this.insertInSessionUsersRoom(socket, tableCode as string);
             }
             catch (e) {
                 this.onError(socket, (e as Error).message, true);
@@ -64,7 +79,7 @@ class SocketController {
         this.io.listen(port);
     }
 
-    onError(socket : Socket, msg : string, disconnect : boolean) {
+    onError(socket : Socket, msg : string, disconnect : boolean = false) {
         this.io.to(socket.id).emit(this.errorEvent, msg);
 
         if (disconnect) {
@@ -87,6 +102,43 @@ class SocketController {
         }
 
         return table;
+    }
+
+    async insertInSessionUsersRoom(socket : Socket, tableCode : string) {
+        const table = await this.getTableDataByCode(tableCode as string);
+
+        socket.join(this.sessionUsersRoom(table.restaurant.id, table.id));
+
+        const activeSession = await SessionService.getActiveSession(table.id);
+
+        if (activeSession != null) {
+            this.updateSessionUsers(activeSession.id);
+        }
+    }
+
+    async insertInSessionOrdersRoom(socket : Socket, sessionUserId : number) {
+        const sessionUser = await prisma.sessionUser.findFirst({
+            where: {
+                id : sessionUserId
+            },
+            include: {
+                session: {
+                    include: {
+                        table: {
+                            include: {
+                                restaurant: true
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (sessionUser == null) {
+            throw new Error('usuário não encontrado');
+        }
+
+        socket.join(this.sessionOrdersRoom(sessionUser.session.table.restaurant.id, sessionUser.session.table.id));
     }
 
     async updateSessionUsers(sessionId : number) {
