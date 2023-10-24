@@ -170,64 +170,9 @@ class SocketController {
     }
 
     async makeOrder(sessionUserId : number, productId : number, quantity : number) {
-        const sessionUser = await prisma.sessionUser.findFirst({
-            where: {
-                id : sessionUserId
-            },
-            include: {
-                session: {
-                    include: {
-                        table: true
-                    }
-                }
-            }
-        });
+        const sessionOrder = await SessionOrdersService.make(sessionUserId, productId, quantity);
 
-        if (!sessionUser) {
-            throw new Error('usuário não encontrado');
-        }
-
-        const product = await prisma.product.findFirst({
-            where: {
-                id: productId,
-                restaurant_id: sessionUser.session.table.restaurant_id
-            }
-        });
-
-        if (!product) {
-            throw new Error('produto inválido');
-        }
-
-        if (quantity < 0) {
-            throw new Error('quantidade inválida');
-        }
-
-        const sessionOrder = await prisma.sessionOrder.create({
-            data: {
-                product_id: product.id,
-                session_id: sessionUser.session_id,
-                quantity: quantity,
-                amount: product.price * quantity,
-                amount_left: product.price * quantity,
-            }
-        });
-
-        if (!sessionOrder) {
-            throw new Error('Erro ao fazer pedido');
-        }
-
-        const sessionOrderUser = await prisma.sessionOrderUser.create({
-            data: {
-                session_order_id: sessionOrder.id,
-                session_user_id: sessionUser.id
-            }
-        });
-
-        if (!sessionOrderUser) {
-            throw new Error('Erro ao vincular usuário ao pedido');
-        }
-
-        this.updateSessionOrders(sessionUser.session_id);
+        this.updateSessionOrders(sessionOrder.session_id);
     }
 
     async updateSessionUsers(sessionId : number) {
