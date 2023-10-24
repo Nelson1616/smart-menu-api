@@ -11,7 +11,7 @@ class SessionService {
             }
         });
 
-        if (activeSession == null) {
+        if (!activeSession) {
             activeSession = await prisma.session.create({
                 data: {
                     table_id : tableId

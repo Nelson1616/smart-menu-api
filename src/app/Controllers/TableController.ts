@@ -21,7 +21,7 @@ class TableController {
                 }
             });
 
-            if (table == null) {
+            if (!table) {
                 throw new Error('Mesa não encontrada');
             }
 
@@ -57,7 +57,7 @@ class TableController {
                 }
             });
 
-            if (table == null) {
+            if (!table) {
                 throw new Error('Mesa não encontrada');
             }
 
