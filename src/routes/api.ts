@@ -7,8 +7,9 @@ router.get('/', function(req, res) {
     res.send('welcome to api');
 });
 
-router.get('/restautants', RestaurantController.index);
+router.get('/restaurants', RestaurantController.index);
 
 router.get('/tables/:code', TableController.index);
+router.post('/tables/enter/:code', TableController.enter);
 
 export default router;

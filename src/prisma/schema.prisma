@@ -97,7 +97,7 @@ model SessionUser {
     status_id Int @db.UnsignedInt @default(1)
     session_id Int @db.UnsignedInt
     user_id Int @db.UnsignedInt
-    amount_to_pay Int @db.UnsignedInt
+    amount_to_pay Int @db.UnsignedInt @default(0)
     created_at DateTime @default(now())
     updated_at DateTime @default(now())
     session Session @relation(fields: [session_id], references: [id])

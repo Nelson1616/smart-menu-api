@@ -5,7 +5,7 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 class RestaurantController {
-    static async index(req: Request, res : Response) {
+    public static async index(req: Request, res : Response) {
         try {
             const restaurants = await prisma.restaurant.findMany();
             res.send(sendResponse(restaurants));
