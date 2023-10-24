@@ -1,4 +1,5 @@
 import { PrismaClient, SessionOrder } from '@prisma/client';
+import SessionUserService from './SessionUserService';
 
 const prisma = new PrismaClient();
 
@@ -24,6 +25,9 @@ class SessionOrdersService {
                         }
                     }
                 }
+            },
+            orderBy:  {
+                id: 'desc'
             }
         });
 
@@ -46,6 +50,10 @@ class SessionOrdersService {
 
         if (!sessionUser) {
             throw new Error('usuário não encontrado');
+        }
+
+        if (sessionUser.status_id == 0) {
+            throw new Error('usuário inválido');
         }
 
         const product = await prisma.product.findFirst({
@@ -88,6 +96,8 @@ class SessionOrdersService {
             throw new Error('Erro ao vincular usuário ao pedido');
         }
 
+        await SessionUserService.updateUsersAmountToPayBySession(sessionUser.session_id);
+
         return sessionOrder;
     }
 
@@ -107,6 +117,10 @@ class SessionOrdersService {
 
         if (!sessionUser) {
             throw new Error('usuário não encontrado');
+        }
+
+        if (sessionUser.status_id == 0) {
+            throw new Error('usuário inválido');
         }
 
         const sessionOrder = await prisma.sessionOrder.findFirst({
@@ -142,10 +156,33 @@ class SessionOrdersService {
             throw new Error('Erro ao vincular usuário ao pedido');
         }
 
+        await SessionUserService.updateUsersAmountToPayBySession(sessionUser.session_id);
+
         return sessionOrder;
     }
 
     public static async notHelp(sessionUserId : number, sessionOrderId : number) : Promise<SessionOrder> {
+        const sessionUser = await prisma.sessionUser.findFirst({
+            where: {
+                id : sessionUserId
+            },
+            include: {
+                session: {
+                    include: {
+                        table: true
+                    }
+                }
+            }
+        });
+
+        if (!sessionUser) {
+            throw new Error('usuário não encontrado');
+        }
+
+        if (sessionUser.status_id == 0) {
+            throw new Error('usuário inválido');
+        }
+
         const sessionOrder = await prisma.sessionOrder.findFirst({
             where : {
                 id: sessionOrderId,
@@ -156,12 +193,16 @@ class SessionOrdersService {
             throw new Error('Pedido não encontrado');
         }
 
+        const sessionId = sessionOrder.session_id;
+
         await prisma.sessionOrderUser.deleteMany({
             where: {
                 session_order_id: sessionOrderId,
                 session_user_id: sessionUserId
             },
         });
+
+        await SessionUserService.updateUsersAmountToPayBySession(sessionId);
 
         return sessionOrder;
     }

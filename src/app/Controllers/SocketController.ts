@@ -233,19 +233,25 @@ class SocketController {
     async makeOrder(sessionUserId : number, productId : number, quantity : number) {
         const sessionOrder = await SessionOrdersService.make(sessionUserId, productId, quantity);
 
-        this.updateSessionOrders(sessionOrder.session_id);
+        await this.updateSessionOrders(sessionOrder.session_id);
+
+        await this.updateSessionUsers(sessionOrder.session_id);
     }
 
     async helpWithOrder(sessionUserId : number, sessionOrderId : number) {
         const sessionOrder = await SessionOrdersService.help(sessionUserId, sessionOrderId);
 
-        this.updateSessionOrders(sessionOrder.session_id);
+        await this.updateSessionOrders(sessionOrder.session_id);
+
+        await this.updateSessionUsers(sessionOrder.session_id);
     }
 
     async notHelpWithOrder(sessionUserId : number, sessionOrderId : number) {
         const sessionOrder = await SessionOrdersService.notHelp(sessionUserId, sessionOrderId);
 
-        this.updateSessionOrders(sessionOrder.session_id);
+        await this.updateSessionOrders(sessionOrder.session_id);
+
+        await this.updateSessionUsers(sessionOrder.session_id);
     }
 
     async updateSessionUsers(sessionId : number) {
