@@ -144,6 +144,27 @@ class SessionOrdersService {
 
         return sessionOrder;
     }
+
+    public static async notHelp(sessionUserId : number, sessionOrderId : number) : Promise<SessionOrder> {
+        const sessionOrder = await prisma.sessionOrder.findFirst({
+            where : {
+                id: sessionOrderId,
+            }
+        });
+
+        if (!sessionOrder) {
+            throw new Error('Pedido não encontrado');
+        }
+
+        await prisma.sessionOrderUser.deleteMany({
+            where: {
+                session_order_id: sessionOrderId,
+                session_user_id: sessionUserId
+            },
+        });
+
+        return sessionOrder;
+    }
 }
 
 export default SessionOrdersService;
