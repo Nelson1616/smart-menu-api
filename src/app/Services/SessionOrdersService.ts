@@ -90,6 +90,60 @@ class SessionOrdersService {
 
         return sessionOrder;
     }
+
+    public static async help(sessionUserId : number, sessionOrderId : number) : Promise<SessionOrder> {
+        const sessionUser = await prisma.sessionUser.findFirst({
+            where: {
+                id : sessionUserId
+            },
+            include: {
+                session: {
+                    include: {
+                        table: true
+                    }
+                }
+            }
+        });
+
+        if (!sessionUser) {
+            throw new Error('usuário não encontrado');
+        }
+
+        const sessionOrder = await prisma.sessionOrder.findFirst({
+            where : {
+                id: sessionOrderId,
+                session_id: sessionUser.session_id
+            }
+        });
+
+        if (!sessionOrder) {
+            throw new Error('Pedido não encontrado');
+        }
+
+        let sessionOrderUser = await prisma.sessionOrderUser.findFirst({
+            where: {
+                session_order_id: sessionOrder.id,
+                session_user_id: sessionUser.id
+            }
+        });
+
+        if (sessionOrderUser) {
+            throw new Error('Usuário já faz parte deste pedido');
+        }
+
+        sessionOrderUser = await prisma.sessionOrderUser.create({
+            data: {
+                session_order_id: sessionOrder.id,
+                session_user_id: sessionUser.id
+            }
+        });
+
+        if (!sessionOrderUser) {
+            throw new Error('Erro ao vincular usuário ao pedido');
+        }
+
+        return sessionOrder;
+    }
 }
 
 export default SessionOrdersService;

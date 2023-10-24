@@ -13,6 +13,8 @@ class SocketController {
 
     private makeOrderClientEvent = 'make_order';
 
+    private helpWithOrderClientEvent = 'help_with_order';
+
     private errorEvent : string = 'error';
 
     private sessionUsersEvent : string = 'users';
@@ -78,6 +80,25 @@ class SocketController {
                     }
 
                     await this.makeOrder(sessionUserId, productId, quantity);
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
+
+            socket.on(this.helpWithOrderClientEvent, async data => {
+                try {
+                    console.log(`user trying to help with order ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const sessionUserId = data.session_user_id;
+
+                    const sessionOrderId = data.session_order_id;
+
+                    if (!sessionUserId || !sessionOrderId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.helpWithOrder(sessionUserId, sessionOrderId);
                 }
                 catch (e) {
                     this.onError(socket, (e as Error).message);
@@ -171,6 +192,12 @@ class SocketController {
 
     async makeOrder(sessionUserId : number, productId : number, quantity : number) {
         const sessionOrder = await SessionOrdersService.make(sessionUserId, productId, quantity);
+
+        this.updateSessionOrders(sessionOrder.session_id);
+    }
+
+    async helpWithOrder(sessionUserId : number, sessionOrderId : number) {
+        const sessionOrder = await SessionOrdersService.help(sessionUserId, sessionOrderId);
 
         this.updateSessionOrders(sessionOrder.session_id);
     }
