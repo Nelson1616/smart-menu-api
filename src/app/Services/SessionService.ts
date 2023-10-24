@@ -1,12 +1,12 @@
-import { PrismaClient, Session, Table } from '@prisma/client';
+import { PrismaClient, Session } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 class SessionService {
-    public static async getActiveSession(table : Table) : Promise<Session> {
+    public static async getActiveSession(tableId : number) : Promise<Session> {
         let activeSession = await prisma.session.findFirst({
             where:{
-                table_id : table.id,
+                table_id : tableId,
                 status_id: 1
             }
         });
@@ -14,7 +14,7 @@ class SessionService {
         if (activeSession == null) {
             activeSession = await prisma.session.create({
                 data: {
-                    table_id : table.id
+                    table_id : tableId
                 }
             });
         }

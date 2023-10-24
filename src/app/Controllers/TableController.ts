@@ -3,6 +3,7 @@ import { sendResponse, sendError } from '../../utils/responses';
 import { PrismaClient } from '@prisma/client';
 import SessionService from '../Services/SessionService';
 import SessionUserService from '../Services/SessionUserService';
+import SocketController from './SocketController';
 
 const prisma = new PrismaClient();
 
@@ -60,9 +61,12 @@ class TableController {
                 throw new Error('Mesa não encontrada');
             }
 
-            const activeSession = await SessionService.getActiveSession(table);
+            const activeSession = await SessionService.getActiveSession(table.id);
 
-            const sessionUser = await SessionUserService.insertUser(activeSession, userName, userImageId);
+            const sessionUser = await SessionUserService.insertUser(activeSession.id, userName, userImageId);
+
+            const socketController : SocketController = req.app.get('SocketController');
+            socketController.updateSessionUsers(activeSession.id);
 
             res.send(sendResponse({
                 sessionUser: sessionUser,

@@ -1,12 +1,12 @@
-import { PrismaClient, Session, SessionUser } from '@prisma/client';
+import { PrismaClient, SessionUser } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 class SessionUserService {
-    public static async insertUser(session : Session,  name : string, imageId : number) : Promise<SessionUser> {
+    public static async insertUser(sessionId : number,  name : string, imageId : number) : Promise<SessionUser> {
         const verifyUserExists = await prisma.sessionUser.findFirst({
             where:{
-                session_id: session.id,
+                session_id: sessionId,
                 user : {
                     name : name
                 }
@@ -26,12 +26,25 @@ class SessionUserService {
 
         const sessionUser = await prisma.sessionUser.create({
             data : {
-                session_id: session.id,
+                session_id: sessionId,
                 user_id: user.id,
             }
         });
 
         return sessionUser;
+    }
+
+    public static async getBySession(sessionId : number) : Promise<SessionUser[]> {
+        const sessionUsers = await prisma.sessionUser.findMany({
+            where:{
+                session_id: sessionId,
+            },
+            include: {
+                user : true
+            }
+        });
+
+        return sessionUsers;
     }
 }
 
