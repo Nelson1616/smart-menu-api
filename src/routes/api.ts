@@ -9,7 +9,7 @@ router.get('/', function(req, res) {
 
 router.get('/restaurants', RestaurantController.index);
 
-router.get('/tables/:code', TableController.index);
+router.get('/tables/:code', TableController.showByCode);
 router.post('/tables/enter/:code', TableController.enter);
 
 export default router;

@@ -8,7 +8,7 @@ import SocketController from './SocketController';
 const prisma = new PrismaClient();
 
 class TableController {
-    public static async index(req: Request, res : Response) {
+    public static async showByCode(req: Request, res : Response) {
         try {
             const tableCode = req.params.code;
 
@@ -17,7 +17,11 @@ class TableController {
                     enter_code: tableCode
                 },
                 include: {
-                    restaurant: true
+                    restaurant: {
+                        include: {
+                            products: true
+                        }
+                    }
                 }
             });
 
