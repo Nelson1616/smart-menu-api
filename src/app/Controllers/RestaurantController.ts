@@ -11,7 +11,7 @@ class RestaurantController {
             res.send(sendResponse(restaurants));
         }
         catch(e) {
-            res.send(sendError([], (e as Error).message));
+            res.send(sendError(null, (e as Error).message));
         }
     }
 }

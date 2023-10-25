@@ -28,7 +28,7 @@ class TableController {
             res.send(sendResponse(table));
         }
         catch(e) {
-            res.send(sendError([], (e as Error).message));
+            res.send(sendError(null, (e as Error).message));
         }
     }
 
@@ -74,7 +74,7 @@ class TableController {
             }));
         }
         catch(e) {
-            res.send(sendError([], (e as Error).message));
+            res.send(sendError(null, (e as Error).message));
         }
     }
 }
