@@ -146,6 +146,7 @@ class SocketController {
             });
 
             try {
+                console.log(JSON.stringify(socket.handshake.headers));
                 const tableCode = socket.handshake.headers.table_code;
             
                 if (!tableCode) {

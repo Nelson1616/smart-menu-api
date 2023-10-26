@@ -1,5 +1,6 @@
 import express from 'express';
 import http from 'http';
+import cors from 'cors';
 import { Server } from 'socket.io';
 import apiRouter from './routes/api';
 import SocketController from './app/Controllers/SocketController';
@@ -9,10 +10,16 @@ const wsPort = 3000;
 
 const app = express();
 const httpServer = http.createServer(app);
-const io = new Server(httpServer);
+const io = new Server(httpServer, {
+    cors: {
+        methods: ['GET', 'PATCH', 'POST', 'PUT'],
+        origin: true,
+    }
+});
 
 const socketController = new SocketController(io);
 
+app.use(cors());
 app.use(express.json());
 app.set('SocketController', socketController);
 app.use('/api', apiRouter);
