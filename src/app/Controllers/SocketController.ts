@@ -146,8 +146,7 @@ class SocketController {
             });
 
             try {
-                console.log(JSON.stringify(socket.handshake.headers));
-                const tableCode = socket.handshake.headers.table_code;
+                const tableCode = socket.handshake.query.table_code;
             
                 if (!tableCode) {
                     console.log(`user of id ${socket.id} has no table code`);
