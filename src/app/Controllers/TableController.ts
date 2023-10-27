@@ -67,7 +67,16 @@ class TableController {
 
             const activeSession = await SessionService.getActiveSession(table.id);
 
-            const sessionUser = await SessionUserService.insertUser(activeSession.id, userName, userImageId);
+            const sessionUserInsert = await SessionUserService.insertUser(activeSession.id, userName, userImageId);
+
+            const sessionUser = await prisma.sessionUser.findFirst({
+                where: {
+                    id: sessionUserInsert.id
+                },
+                include: {
+                    user: true
+                }
+            });
 
             const socketController : SocketController = req.app.get('SocketController');
             socketController.updateSessionUsers(activeSession.id);
