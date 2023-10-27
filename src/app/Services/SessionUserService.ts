@@ -118,8 +118,6 @@ class SessionUserService {
                 });
             }
 
-            console.log(`number = ${amountToPay}`);
-
             await prisma.sessionUser.update({
                 where: {
                     id: user.id,
