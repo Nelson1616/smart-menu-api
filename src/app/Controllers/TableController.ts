@@ -38,13 +38,13 @@ class TableController {
 
     public static async enter(req: Request, res : Response) {
         try {
-            const tableCode = req.params.code;
+            const tableCode : string = req.params.code;
 
-            const userName = req.body.userName;
+            const userName : string = req.body.userName;
 
-            const userImageId = req.body.userImageId;
+            const userImageId : number = req.body.userImageId;
 
-            if (!tableCode || !userName || !userImageId) {
+            if (!tableCode || !userName || !userImageId || !userName.match(/[a-zA-Z]/g) || userName.length < 2) {
                 throw new Error('Parametros inválidos');
             }
 
