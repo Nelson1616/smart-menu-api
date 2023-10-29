@@ -270,7 +270,10 @@ class SocketController {
         }
 
         this.io.to(this.sessionUsersRoom(session.table.restaurant_id, session.table.id))
-            .emit(this.sessionUsersEvent, await SessionUserService.getBySession(sessionId));
+            .emit(this.sessionUsersEvent, {
+                'session' : session,
+                'sessionUsers' : await SessionUserService.getBySession(sessionId)
+            });
     }
 
     async updateSessionOrders(sessionId : number) {
@@ -289,7 +292,10 @@ class SocketController {
         }
 
         this.io.to(this.sessionOrdersRoom(session.table.restaurant_id, session.table.id))
-            .emit(this.sessionOrdersEvent, await SessionOrdersService.getBySession(sessionId));
+            .emit(this.sessionOrdersEvent, {
+                'session' : session,
+                'sessionOrders' : await SessionOrdersService.getBySession(sessionId)
+            });
     }
 
     async callWaiter(sessionUserId : number) {
