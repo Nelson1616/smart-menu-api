@@ -106,9 +106,8 @@ class SessionUserService {
             },
         });
 
-        sessionUsers.forEach(async user => {
-
-            const ordersToPay = await this.getOrdersToPay(user.id);
+        for (let i = 0; i < sessionUsers.length; i++) {
+            const ordersToPay = await this.getOrdersToPay(sessionUsers[i].id);
 
             let amountToPay : number = 0;
 
@@ -120,13 +119,15 @@ class SessionUserService {
 
             await prisma.sessionUser.update({
                 where: {
-                    id: user.id,
+                    id: sessionUsers[i].id,
                 },
                 data: {
                     amount_to_pay: amountToPay
                 }
             });
-        });
+        }
+
+            
     }
 }
 
