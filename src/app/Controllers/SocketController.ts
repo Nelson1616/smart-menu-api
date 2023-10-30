@@ -384,7 +384,12 @@ class SocketController {
                 include: {
                     sessionUser: {
                         include: {
-                            user: true
+                            user: true,
+                            session: {
+                                include: {
+                                    table: true
+                                }
+                            }
                         }
                     }
                 }
