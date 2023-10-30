@@ -147,14 +147,20 @@ class SocketController {
 
             try {
                 const tableCode = socket.handshake.query.table_code;
+
+                const officialId = socket.handshake.query.official_id;
             
-                if (!tableCode) {
+                if (!tableCode && !officialId) {
                     console.log(`user of id ${socket.id} has no table code`);
 
                     throw new Error('a table code is necessary to connect');
                 }
-
-                this.insertInSessionUsersRoom(socket, tableCode as string);
+                else if (tableCode) {
+                    this.insertInSessionUsersRoom(socket, tableCode as string);
+                }
+                else {
+                    this.insertOfficialInRooms(socket, Number(officialId));
+                }
             }
             catch (e) {
                 this.onError(socket, (e as Error).message, true);
@@ -194,7 +200,7 @@ class SocketController {
     async insertInSessionUsersRoom(socket : Socket, tableCode : string) {
         const table = await this.getTableDataByCode(tableCode as string);
 
-        socket.join(this.sessionUsersRoom(table.restaurant.id, table.id));
+        await socket.join(this.sessionUsersRoom(table.restaurant.id, table.id));
 
         const activeSession = await SessionService.getActiveSession(table.id);
 
@@ -225,9 +231,50 @@ class SocketController {
             throw new Error('usuário não encontrado');
         }
 
-        socket.join(this.sessionOrdersRoom(sessionUser.session.table.restaurant.id, sessionUser.session.table.id));
+        await socket.join(this.sessionOrdersRoom(sessionUser.session.table.restaurant.id, sessionUser.session.table.id));
 
         await this.updateSessionOrders(sessionUser.session_id);
+    }
+
+    async insertOfficialInRooms(socket: Socket, officialId : number) {
+        const official = await prisma.official.findFirst({
+            where: {
+                id: officialId
+            },
+            include: {
+                restaurant: {
+                    include: {
+                        tables: {
+                            include: {
+                                sessions: {
+                                    where: {
+                                        status_id : 1
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        if (!official) {
+            throw new Error('Funcionário não encontrado');
+        }
+
+        for (let i = 0; i < official.restaurant.tables.length; i++) {
+            const table = official.restaurant.tables[i];
+
+            await socket.join(this.sessionUsersRoom(table.restaurant_id, table.id));
+
+            await socket.join(this.sessionOrdersRoom(table.restaurant_id, table.id));
+
+            if (table.sessions.length) {
+                await this.updateSessionUsers(table.sessions[0].id);
+
+                await this.updateSessionOrders(table.sessions[0].id);
+            }
+        }
     }
 
     async makeOrder(sessionUserId : number, productId : number, quantity : number) {
