@@ -19,6 +19,8 @@ class SocketController {
 
     private callWaiterClientEvent = 'call_waiter';
 
+    private onWaiterCall = 'on_waiter_call';
+
     private errorEvent : string = 'error';
 
     private sessionUsersEvent : string = 'users';
@@ -31,6 +33,10 @@ class SocketController {
 
     private sessionOrdersRoom(restaurantId : number, tableId : number) : string {
         return `restaurant_${restaurantId}_table_${tableId}_orders`;
+    }
+
+    private sessionWaiterCallRoom(restaurant_id : number) : string {
+        return `restaurant_${restaurant_id}_waiter_calls`;
     }
 
     constructor(io : Server) {
@@ -269,12 +275,16 @@ class SocketController {
 
             await socket.join(this.sessionOrdersRoom(table.restaurant_id, table.id));
 
+            await socket.join(this.sessionWaiterCallRoom(table.restaurant_id));
+
             if (table.sessions.length) {
                 await this.updateSessionUsers(table.sessions[0].id);
 
                 await this.updateSessionOrders(table.sessions[0].id);
             }
         }
+
+        await this.updateWaiterCalls(official.restaurant_id);
     }
 
     async makeOrder(sessionUserId : number, productId : number, quantity : number) {
@@ -345,12 +355,75 @@ class SocketController {
             });
     }
 
+    async updateWaiterCalls(restaurant_id: number) {
+        const filteredCalls = await prisma.$queryRaw`
+            SELECT 
+            swc.*
+            FROM session_waiter_calls swc 
+            JOIN session_users su ON su.id = swc.session_user_id 
+            JOIN sessions s ON s.id = su.session_id 
+            JOIN tables t ON t.id = s.table_id 
+            WHERE
+            swc.status_id = 1
+            AND su.status_id = 1
+            AND s.status_id = 1
+            AND t.restaurant_id = ${restaurant_id}
+        `;
+
+        if (!filteredCalls || !Array.isArray(filteredCalls)) {
+            throw new Error(`erro ao buscar chamadas do restaurante ${restaurant_id}`);
+        }
+
+        const calls : Array<unknown> = [];
+
+        for (let i = 0; i < filteredCalls.length; i++) {
+            const sessionWaiterCall = await prisma.sessionWaiterCall.findFirst({
+                where: {
+                    id: Number(filteredCalls[i].id),
+                },
+                include: {
+                    sessionUser: {
+                        include: {
+                            user: true
+                        }
+                    }
+                }
+            });
+
+            if (sessionWaiterCall) {
+                calls.push(sessionWaiterCall);
+            }
+        }
+
+        this.io.to(this.sessionWaiterCallRoom(restaurant_id,))
+            .emit(this.onWaiterCall, {
+                'sessionWaiterCalls' : calls 
+            });
+    }
+
     async callWaiter(sessionUserId : number) {
+        const sessionUser = await prisma.sessionUser.findFirst({
+            where: {id : sessionUserId},
+            include: {
+                session: {
+                    include: {
+                        table: true
+                    }
+                }
+            }
+        });
+
+        if (!sessionUser) {
+            throw new Error('Usuário não encontrado');
+        }
+
         await prisma.sessionWaiterCall.create({
             data: {
                 session_user_id: sessionUserId
             }
         });
+
+        await this.updateWaiterCalls(sessionUser!.session.table.restaurant_id);
     }
 }
 
