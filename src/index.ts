@@ -11,7 +11,6 @@ const wsPort = 3000;
 const app = express();
 const httpServer = http.createServer(app);
 const io = new Server(httpServer, {
-    path: '/smart-menu-api-ws/',
     cors: {
         methods: ['GET', 'PATCH', 'POST', 'PUT'],
         origin: true,
