@@ -8,11 +8,9 @@ services:
             dockerfile: Dockerfile
         restart: unless-stopped
         command: sh -c "npm install && npm run dev"
+        container_name: app
         volumes:
             - ./src:/src/
-        ports:
-            - "3016:3000"
-            - "8016:8080"
         networks:
             - appnet
     db:
@@ -28,6 +26,16 @@ services:
             - "3388:3306"
         networks:
             - appnet
+    nginx:
+        restart: always
+        build:
+            context: ./nginx
+        ports:
+            - "80:80"
+        networks:
+            - appnet
+        depends_on:
+            - app
 
 networks:
     appnet:
