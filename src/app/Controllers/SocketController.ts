@@ -9,7 +9,11 @@ const prisma = new PrismaClient();
 class SocketController {
     private io : Server;
 
-    private joinClientEvent = 'join';
+    private joinTableClientEvent = 'join_table';
+
+    private joinSessionClientEvent = 'join_session';
+
+    private joinOfficialClientEvent = 'join_official';
 
     private makeOrderClientEvent = 'make_order';
 
@@ -56,23 +60,6 @@ class SocketController {
             socket.on('message', (msg) => {
                 console.log(`message from user ${socket.id}: ${msg}`);
                 socket.broadcast.emit('message', `message from user ${socket.id}: ${msg}`);
-            });
-
-            socket.on(this.joinClientEvent, async data => {
-                try {
-                    console.log(`user trying to join ${socket.id}: ${JSON.stringify(data)}`);
-
-                    const sessionUserId = data.session_user_id;
-
-                    if (!sessionUserId) {
-                        throw new Error('parametros inválidos');
-                    }
-
-                    await this.insertInSessionOrdersRoom(socket, sessionUserId);
-                }
-                catch (e) {
-                    this.onError(socket, (e as Error).message);
-                }
             });
 
             socket.on(this.makeOrderClientEvent, async data => {
@@ -151,26 +138,56 @@ class SocketController {
                 }
             });
 
-            try {
-                const tableCode = socket.handshake.query.table_code;
+            socket.on(this.joinSessionClientEvent, async data => {
+                try {
+                    console.log(`user trying to joinSessionClientEvent ${socket.id}: ${JSON.stringify(data)}`);
 
-                const officialId = socket.handshake.query.official_id;
-            
-                if (!tableCode && !officialId) {
-                    console.log(`user of id ${socket.id} has no table code`);
+                    const sessionUserId = data.session_user_id;
 
-                    throw new Error('a table code is necessary to connect');
+                    if (!sessionUserId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.insertInSessionOrdersAndUsersRoom(socket, sessionUserId);
                 }
-                else if (tableCode) {
-                    this.insertInSessionUsersRoom(socket, tableCode as string);
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
                 }
-                else {
-                    this.insertOfficialInRooms(socket, Number(officialId));
+            });
+
+            socket.on(this.joinTableClientEvent, async data => {
+                try {
+                    console.log(`user trying to joinTableClientEvent ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const tableCode = data.table_code;
+
+                    if (!tableCode) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.insertInSessionUsersRoom(socket, tableCode as string);
                 }
-            }
-            catch (e) {
-                this.onError(socket, (e as Error).message, true);
-            }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
+
+            socket.on(this.joinOfficialClientEvent, async data => {
+                try {
+                    console.log(`user trying to joinOfficialClientEvent ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const officialId = data.official_id;
+
+                    if (!officialId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.insertOfficialInRooms(socket, Number(officialId));
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
         });
     }
 
@@ -215,7 +232,7 @@ class SocketController {
         }
     }
 
-    async insertInSessionOrdersRoom(socket : Socket, sessionUserId : number) {
+    async insertInSessionOrdersAndUsersRoom(socket : Socket, sessionUserId : number) {
         const sessionUser = await prisma.sessionUser.findFirst({
             where: {
                 id : sessionUserId
@@ -240,6 +257,14 @@ class SocketController {
         await socket.join(this.sessionOrdersRoom(sessionUser.session.table.restaurant.id, sessionUser.session.table.id));
 
         await this.updateSessionOrders(sessionUser.session_id);
+
+        await socket.join(this.sessionUsersRoom(sessionUser.session.table.restaurant.id, sessionUser.session.table.id));
+
+        const activeSession = await SessionService.getActiveSession(sessionUser.session.table.id);
+
+        if (activeSession != null) {
+            this.updateSessionUsers(activeSession.id);
+        }
     }
 
     async insertOfficialInRooms(socket: Socket, officialId : number) {
