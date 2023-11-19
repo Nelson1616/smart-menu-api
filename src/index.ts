@@ -24,6 +24,10 @@ app.use(express.json());
 app.set('SocketController', socketController);
 app.use('/api', apiRouter);
 
+app.use('/images', [
+    express.static('./public/images')
+]);
+
 app.listen(httpPort, () =>
     console.log(`🚀 HTTP Server ready at: http://localhost:${httpPort}`),
 );
