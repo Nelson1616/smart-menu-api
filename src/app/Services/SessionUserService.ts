@@ -149,7 +149,7 @@ class SessionUserService {
             await ordersToPay.forEach(async order => {
                 await prisma.sessionOrderUser.update({
                     where: {
-                        id: order.session_user_order_id
+                        id: parseInt(order.session_user_order_id)
                     },
                     data: {
                         status_id: 0
@@ -158,14 +158,14 @@ class SessionUserService {
 
                 await prisma.sessionOrder.update({
                     where: {
-                        id: order.session_order_id
+                        id: parseInt(order.session_order_id)
                     },
                     data: {
-                        amount_left: order.amount_left - order.price_to_pay
+                        amount_left: parseInt(order.amount_left) - parseInt(order.price_to_pay)
                     }
                 });
 
-                await SessionOrdersService.tryUpdateToPaid(order.session_order_id);
+                await SessionOrdersService.tryUpdateToPaid(parseInt(order.session_order_id));
             });
         }
 
