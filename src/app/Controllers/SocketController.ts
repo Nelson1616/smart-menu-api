@@ -21,7 +21,15 @@ class SocketController {
 
     private notHelpWithOrderClientEvent = 'not_help_with_order';
 
+    private updateOrderClientEvent = 'update_order';
+
+    private downgradeOrderClientEvent = 'downgrade_order';
+
+    private cancelOrderClientEvent = 'cancel_order';
+
     private callWaiterClientEvent = 'call_waiter';
+
+    private updateWaiterCallClientEvent = 'update_waiter_call';
 
     private onWaiterCall = 'on_waiter_call';
 
@@ -121,6 +129,63 @@ class SocketController {
                 }
             });
 
+            socket.on(this.updateOrderClientEvent, async data => {
+                try {
+                    console.log(`user trying to update order ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const officialId = data.official_id;
+
+                    const sessionOrderId = data.session_order_id;
+
+                    if (!officialId || !sessionOrderId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.updateOrder(officialId, sessionOrderId);
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
+
+            socket.on(this.downgradeOrderClientEvent, async data => {
+                try {
+                    console.log(`user trying to downgrade order ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const officialId = data.official_id;
+
+                    const sessionOrderId = data.session_order_id;
+
+                    if (!officialId || !sessionOrderId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.downgradeOrder(officialId, sessionOrderId);
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
+
+            socket.on(this.cancelOrderClientEvent, async data => {
+                try {
+                    console.log(`user trying to cancel order ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const officialId = data.official_id;
+
+                    const sessionOrderId = data.session_order_id;
+
+                    if (!officialId || !sessionOrderId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.cancelOrder(officialId, sessionOrderId);
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
+
             socket.on(this.callWaiterClientEvent, async data => {
                 try {
                     console.log(`user trying to call waiter ${socket.id}: ${JSON.stringify(data)}`);
@@ -132,6 +197,25 @@ class SocketController {
                     }
 
                     await this.callWaiter(sessionUserId);
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
+
+            socket.on(this.updateWaiterCallClientEvent, async data => {
+                try {
+                    console.log(`user trying to update waiter call ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const officialId = data.official_id;
+
+                    const waiterCallId = data.waiter_call_id;
+
+                    if (!officialId || !waiterCallId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.updateWaiterCall(officialId, waiterCallId);
                 }
                 catch (e) {
                     this.onError(socket, (e as Error).message);
@@ -320,6 +404,60 @@ class SocketController {
         await this.updateSessionUsers(sessionOrder.session_id);
     }
 
+    async updateOrder(officialId : number, sessionOrderId : number) {
+        const official = await prisma.official.findFirst({
+            where: {
+                id: officialId
+            }
+        });
+
+        if (!official) {
+            throw new Error('Funcionário não encontrado');
+        }
+
+        const sessionOrder = await SessionOrdersService.update(sessionOrderId);
+
+        await this.updateSessionOrders(sessionOrder.session_id);
+
+        await this.updateSessionUsers(sessionOrder.session_id);
+    }
+
+    async downgradeOrder(officialId : number, sessionOrderId : number) {
+        const official = await prisma.official.findFirst({
+            where: {
+                id: officialId
+            }
+        });
+
+        if (!official) {
+            throw new Error('Funcionário não encontrado');
+        }
+
+        const sessionOrder = await SessionOrdersService.downgrade(sessionOrderId);
+
+        await this.updateSessionOrders(sessionOrder.session_id);
+
+        await this.updateSessionUsers(sessionOrder.session_id);
+    }
+
+    async cancelOrder(officialId : number, sessionOrderId : number) {
+        const official = await prisma.official.findFirst({
+            where: {
+                id: officialId
+            }
+        });
+
+        if (!official) {
+            throw new Error('Funcionário não encontrado');
+        }
+
+        const sessionOrder = await SessionOrdersService.cancel(sessionOrderId);
+
+        await this.updateSessionOrders(sessionOrder.session_id);
+
+        await this.updateSessionUsers(sessionOrder.session_id);
+    }
+
     async helpWithOrder(sessionUserId : number, sessionOrderId : number) {
         const sessionOrder = await SessionOrdersService.help(sessionUserId, sessionOrderId);
 
@@ -450,6 +588,57 @@ class SocketController {
         await prisma.sessionWaiterCall.create({
             data: {
                 session_user_id: sessionUserId
+            }
+        });
+
+        await this.updateWaiterCalls(sessionUser!.session.table.restaurant_id);
+    }
+
+    async updateWaiterCall(officialId : number, waiterCallId : number) {
+        const official = await prisma.official.findFirst({
+            where: {
+                id: officialId
+            }
+        });
+
+        if (!official) {
+            throw new Error('Funcionário não encontrado');
+        }
+
+        const waiterCall = await prisma.sessionWaiterCall.findFirst({
+            where: {
+                id: waiterCallId
+            },
+            include: {
+                sessionUser: true
+            }
+        });
+
+        if (!waiterCall) {
+            throw new Error('Chamado não encontrado');
+        }
+
+        const sessionUser = await prisma.sessionUser.findFirst({
+            where: {id : waiterCall.sessionUser.id},
+            include: {
+                session: {
+                    include: {
+                        table: true
+                    }
+                }
+            }
+        });
+
+        if (!sessionUser) {
+            throw new Error('Usuário não encontrado');
+        }
+
+        await prisma.sessionWaiterCall.update({
+            where: {
+                id: waiterCallId
+            },
+            data: {
+                status_id: 2
             }
         });
 

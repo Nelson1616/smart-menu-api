@@ -206,6 +206,109 @@ class SessionOrdersService {
 
         return sessionOrder;
     }
+
+    public static async update(sessionOrderId : number) : Promise<SessionOrder> {
+        let sessionOrder = await prisma.sessionOrder.findFirst({
+            where : {
+                id: sessionOrderId
+            }
+        });
+
+        if (!sessionOrder) {
+            throw new Error('Pedido não encontrado');
+        }
+
+        if (sessionOrder.session_id == 0) {
+            throw new Error('Pedido já foi pago');
+        }
+
+        if (sessionOrder.session_id > 2) {
+            throw new Error('Pedido com status inválido');
+        }
+
+        await prisma.sessionOrder.update({
+            where: {
+                id: sessionOrderId
+            },
+            data: {
+                status_id: sessionOrder.session_id + 1
+            }
+        });
+
+        sessionOrder = await prisma.sessionOrder.findFirst({
+            where : {
+                id: sessionOrderId
+            }
+        });
+
+        return sessionOrder!;
+    }
+
+    public static async downgrade(sessionOrderId : number) : Promise<SessionOrder> {
+        let sessionOrder = await prisma.sessionOrder.findFirst({
+            where : {
+                id: sessionOrderId
+            }
+        });
+
+        if (!sessionOrder) {
+            throw new Error('Pedido não encontrado');
+        }
+
+        if (sessionOrder.session_id == 0) {
+            throw new Error('Pedido já foi pago');
+        }
+
+        await prisma.sessionOrder.update({
+            where: {
+                id: sessionOrderId
+            },
+            data: {
+                status_id: sessionOrder.session_id - 1
+            }
+        });
+
+        sessionOrder = await prisma.sessionOrder.findFirst({
+            where : {
+                id: sessionOrderId
+            }
+        });
+
+        return sessionOrder!;
+    }
+
+    public static async cancel(sessionOrderId : number) : Promise<SessionOrder> {
+        let sessionOrder = await prisma.sessionOrder.findFirst({
+            where : {
+                id: sessionOrderId
+            }
+        });
+
+        if (!sessionOrder) {
+            throw new Error('Pedido não encontrado');
+        }
+
+        if (sessionOrder.session_id == 0) {
+            throw new Error('Pedido já foi pago');
+        }
+
+        await prisma.sessionOrder.update({
+            where: {
+                id: sessionOrderId
+            },
+            data: {
+                status_id: 4
+            }
+        });
+
+        sessionOrder = await prisma.sessionOrder.findFirst({
+            where : {
+                id: sessionOrderId
+            }
+        });
+
+        return sessionOrder!;
+    }
 }
 
 export default SessionOrdersService;
