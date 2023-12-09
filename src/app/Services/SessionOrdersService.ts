@@ -321,7 +321,7 @@ class SessionOrdersService {
             AND sou.status_id > 0
         `;
 
-        if (!query) {
+        if (!query || !Array.isArray(query) || !query.length) {
             await prisma.sessionOrder.update({
                 where: {
                     id: sessionOrderId,

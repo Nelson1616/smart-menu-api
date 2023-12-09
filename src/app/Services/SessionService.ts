@@ -33,7 +33,7 @@ class SessionService {
             AND su.status_id > 0
         `;
 
-        if (!query) {
+        if (!query || !Array.isArray(query) || !query.length) {
             await prisma.session.update({
                 where: {
                     id: sessionId,
