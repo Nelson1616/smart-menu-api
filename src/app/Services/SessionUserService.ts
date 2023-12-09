@@ -1,4 +1,6 @@
 import { PrismaClient, SessionUser } from '@prisma/client';
+import SessionOrdersService from './SessionOrdersService';
+import SessionService from './SessionService';
 
 const prisma = new PrismaClient();
 
@@ -128,6 +130,63 @@ class SessionUserService {
         }
 
             
+    }
+
+    public static async pay(sessionUserId : number) : Promise<SessionUser> {
+        let sessionUser = await prisma.sessionUser.findFirst({
+            where: {
+                id: sessionUserId,
+            }
+        });
+
+        if (!sessionUser) {
+            throw new Error('Usuário não encontrado');
+        }
+
+        const ordersToPay = await this.getOrdersToPay(sessionUserId);
+
+        if (ordersToPay && Array.isArray(ordersToPay)) {
+            await ordersToPay.forEach(async order => {
+                await prisma.sessionOrderUser.update({
+                    where: {
+                        id: order.session_user_order_id
+                    },
+                    data: {
+                        status_id: 0
+                    }
+                });
+
+                await prisma.sessionOrder.update({
+                    where: {
+                        id: order.session_order_id
+                    },
+                    data: {
+                        amount_left: order.amount_left - order.price_to_pay
+                    }
+                });
+
+                await SessionOrdersService.tryUpdateToPaid(order.session_order_id);
+            });
+        }
+
+        await prisma.sessionUser.update({
+            where: {
+                id: sessionUserId,
+            },
+            data: {
+                status_id: 0
+            }
+        });
+
+        await SessionService.tryUpdateToPaid(sessionUser.session_id);
+
+        sessionUser = await prisma.sessionUser.findFirst({
+            where: {
+                id: sessionUserId,
+            }
+        });
+
+        return sessionUser!;
     }
 }
 

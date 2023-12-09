@@ -21,6 +21,29 @@ class SessionService {
 
         return activeSession;
     }
+
+    public static async tryUpdateToPaid(sessionId : number) {
+        const query = await prisma.$queryRaw`
+            SELECT 
+            su.*
+            FROM sessions s
+            JOIN session_users su ON su.session_id = s.id
+            WHERE 
+            s.id = ${sessionId}
+            AND su.status_id > 0
+        `;
+
+        if (!query) {
+            await prisma.session.update({
+                where: {
+                    id: sessionId,
+                },
+                data: {
+                    status_id: 0
+                }
+            });
+        }
+    }
 }
 
 export default SessionService;

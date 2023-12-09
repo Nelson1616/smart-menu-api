@@ -31,6 +31,8 @@ class SocketController {
 
     private updateWaiterCallClientEvent = 'update_waiter_call';
 
+    private payByWaiterClientEvent = 'pay_by_waiter';
+
     private onWaiterCall = 'on_waiter_call';
 
     private errorEvent : string = 'error';
@@ -272,6 +274,25 @@ class SocketController {
                     this.onError(socket, (e as Error).message);
                 }
             });
+
+            socket.on(this.payByWaiterClientEvent, async data => {
+                try {
+                    console.log(`user trying to payByWaiterClientEvent ${socket.id}: ${JSON.stringify(data)}`);
+
+                    const officialId = data.official_id;
+
+                    const sessionUserId = data.session_user_id;
+
+                    if (!officialId || !sessionUserId) {
+                        throw new Error('parametros inválidos');
+                    }
+
+                    await this.payByWaiter(officialId, sessionUserId);
+                }
+                catch (e) {
+                    this.onError(socket, (e as Error).message);
+                }
+            });
         });
     }
 
@@ -472,6 +493,24 @@ class SocketController {
         await this.updateSessionOrders(sessionOrder.session_id);
 
         await this.updateSessionUsers(sessionOrder.session_id);
+    }
+
+    async payByWaiter(officialId : number, sessionUserId : number) {
+        const official = await prisma.official.findFirst({
+            where: {
+                id: officialId
+            }
+        });
+
+        if (!official) {
+            throw new Error('Funcionário não encontrado');
+        }
+
+        const sessionUser = await SessionUserService.pay(sessionUserId);
+
+        await this.updateSessionOrders(sessionUser.session_id);
+
+        await this.updateSessionUsers(sessionUser.session_id);
     }
 
     async updateSessionUsers(sessionId : number) {

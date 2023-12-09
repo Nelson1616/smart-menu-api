@@ -309,6 +309,29 @@ class SessionOrdersService {
 
         return sessionOrder!;
     }
+
+    public static async tryUpdateToPaid(sessionOrderId : number) {
+        const query = await prisma.$queryRaw`
+            SELECT
+            sou.*
+            FROM session_orders so 
+            JOIN session_order_users sou ON sou.session_order_id = so.id
+            WHERE 
+            so.id = ${sessionOrderId}
+            AND sou.status_id > 0
+        `;
+
+        if (!query) {
+            await prisma.sessionOrder.update({
+                where: {
+                    id: sessionOrderId,
+                },
+                data: {
+                    status_id: 0
+                }
+            });
+        }
+    }
 }
 
 export default SessionOrdersService;
