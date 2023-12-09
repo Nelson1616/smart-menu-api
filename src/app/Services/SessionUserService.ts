@@ -146,10 +146,10 @@ class SessionUserService {
         const ordersToPay = await this.getOrdersToPay(sessionUserId);
 
         if (ordersToPay && Array.isArray(ordersToPay)) {
-            await ordersToPay.forEach(async order => {
+            for (let i = 0; i < ordersToPay.length; i++) {
                 await prisma.sessionOrderUser.update({
                     where: {
-                        id: parseInt(order.session_user_order_id)
+                        id: parseInt(ordersToPay[i].session_user_order_id)
                     },
                     data: {
                         status_id: 0
@@ -158,15 +158,15 @@ class SessionUserService {
 
                 await prisma.sessionOrder.update({
                     where: {
-                        id: parseInt(order.session_order_id)
+                        id: parseInt(ordersToPay[i].session_order_id)
                     },
                     data: {
-                        amount_left: parseInt(order.amount_left) - parseInt(order.price_to_pay)
+                        amount_left: parseInt(ordersToPay[i].amount_left) - parseInt(ordersToPay[i].price_to_pay)
                     }
                 });
 
-                await SessionOrdersService.tryUpdateToPaid(parseInt(order.session_order_id));
-            });
+                await SessionOrdersService.tryUpdateToPaid(parseInt(ordersToPay[i].session_order_id));
+            }
         }
 
         await prisma.sessionUser.update({
