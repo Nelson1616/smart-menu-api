@@ -14,6 +14,6 @@ router.get('/tables/:code', TableController.showByCode);
 router.post('/tables/enter/:code', TableController.enter);
 
 router.post('/officials/login', OfficialController.login);
-router.post('/officials/:id', OfficialController.show);
+router.get('/officials/:id', OfficialController.show);
 
 export default router;
