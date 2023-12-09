@@ -134,6 +134,10 @@ class SessionOrdersService {
             throw new Error('Pedido não encontrado');
         }
 
+        if (sessionOrder.status_id == 0 || sessionOrder.session_id == 4) {
+            throw new Error('Pedido com status inválido');
+        }
+
         let sessionOrderUser = await prisma.sessionOrderUser.findFirst({
             where: {
                 session_order_id: sessionOrder.id,
@@ -186,11 +190,22 @@ class SessionOrdersService {
         const sessionOrder = await prisma.sessionOrder.findFirst({
             where : {
                 id: sessionOrderId,
+            },
+            include: {
+                sessionOrderUser: true
             }
         });
 
         if (!sessionOrder) {
             throw new Error('Pedido não encontrado');
+        }
+
+        if (sessionOrder.sessionOrderUser.length < 2) {
+            throw new Error('Pedido sem clientes suficientes');
+        }
+
+        if (sessionOrder.status_id == 0 || sessionOrder.session_id == 4) {
+            throw new Error('Pedido com status inválido');
         }
 
         const sessionId = sessionOrder.session_id;

@@ -92,7 +92,7 @@ class SessionUserService {
             JOIN session_orders so on sou.session_order_id = so.id 
             JOIN products p on p.id = so.product_id 
             where 
-            u.id = ${sessionUserId}
+            su.id = ${sessionUserId}
             AND sou.status_id != 0
             AND so.status_id != 0
             AND so.status_id != 4
