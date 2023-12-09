@@ -511,6 +511,8 @@ class SocketController {
         await this.updateSessionOrders(sessionUser.session_id);
 
         await this.updateSessionUsers(sessionUser.session_id);
+
+        await this.updateWaiterCalls(sessionUser.session_id);
     }
 
     async updateSessionUsers(sessionId : number) {
@@ -528,11 +530,20 @@ class SocketController {
             throw new Error(`sessão de id ${sessionId} não encontrada`);
         }
 
-        this.io.to(this.sessionUsersRoom(session.table.restaurant_id, session.table.id))
-            .emit(this.sessionUsersEvent, {
-                'session' : session,
-                'sessionUsers' : await SessionUserService.getBySession(sessionId)
-            });
+        if (session.id == 0) {
+            this.io.to(this.sessionUsersRoom(session.table.restaurant_id, session.table.id))
+                .emit(this.sessionUsersEvent, {
+                    'session' : session,
+                    'sessionUsers' : []
+                });
+        }
+        else {
+            this.io.to(this.sessionUsersRoom(session.table.restaurant_id, session.table.id))
+                .emit(this.sessionUsersEvent, {
+                    'session' : session,
+                    'sessionUsers' : await SessionUserService.getBySession(sessionId)
+                });
+        }        
     }
 
     async updateSessionOrders(sessionId : number) {
@@ -550,11 +561,20 @@ class SocketController {
             throw new Error(`sessão de id ${sessionId} não encontrada`);
         }
 
-        this.io.to(this.sessionOrdersRoom(session.table.restaurant_id, session.table.id))
-            .emit(this.sessionOrdersEvent, {
-                'session' : session,
-                'sessionOrders' : await SessionOrdersService.getBySession(sessionId)
-            });
+        if (session.id == 0) {
+            this.io.to(this.sessionOrdersRoom(session.table.restaurant_id, session.table.id))
+                .emit(this.sessionOrdersEvent, {
+                    'session' : session,
+                    'sessionOrders' : []
+                });
+        }
+        else {
+            this.io.to(this.sessionOrdersRoom(session.table.restaurant_id, session.table.id))
+                .emit(this.sessionOrdersEvent, {
+                    'session' : session,
+                    'sessionOrders' : await SessionOrdersService.getBySession(sessionId)
+                });
+        }
     }
 
     async updateWaiterCalls(restaurant_id: number) {
