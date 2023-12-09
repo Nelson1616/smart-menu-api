@@ -38,6 +38,38 @@ class OfficialController {
             res.send(sendError(null, (e as Error).message));
         }
     }
+
+    public static async show(req: Request, res : Response) {
+        try {
+            const id : number = Number(req.params.id);
+
+            if (!id) {
+                throw new Error('parametros inválidos');
+            }
+
+            const official = await prisma.official.findFirst({
+                where: {
+                    id: id
+                },
+                include: {
+                    restaurant: {
+                        include: {
+                            tables: true
+                        }
+                    }
+                }
+            });
+
+            if (!official) {
+                throw new Error('Usuário não encontrado');
+            }
+
+            res.send(sendResponse(official));
+        }
+        catch(e) {
+            res.send(sendError(null, (e as Error).message));
+        }
+    }
 }
 
 export default OfficialController;
