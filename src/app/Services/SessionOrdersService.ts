@@ -218,11 +218,11 @@ class SessionOrdersService {
             throw new Error('Pedido não encontrado');
         }
 
-        if (sessionOrder.session_id == 0) {
+        if (sessionOrder.status_id == 0) {
             throw new Error('Pedido já foi pago');
         }
 
-        if (sessionOrder.session_id > 2) {
+        if (sessionOrder.status_id > 2) {
             throw new Error('Pedido com status inválido');
         }
 
@@ -231,7 +231,7 @@ class SessionOrdersService {
                 id: sessionOrderId
             },
             data: {
-                status_id: sessionOrder.session_id + 1
+                status_id: sessionOrder.status_id + 1
             }
         });
 
@@ -255,7 +255,7 @@ class SessionOrdersService {
             throw new Error('Pedido não encontrado');
         }
 
-        if (sessionOrder.session_id == 0) {
+        if (sessionOrder.status_id == 0) {
             throw new Error('Pedido já foi pago');
         }
 
@@ -264,7 +264,7 @@ class SessionOrdersService {
                 id: sessionOrderId
             },
             data: {
-                status_id: sessionOrder.session_id - 1
+                status_id: sessionOrder.status_id - 1
             }
         });
 
@@ -288,7 +288,7 @@ class SessionOrdersService {
             throw new Error('Pedido não encontrado');
         }
 
-        if (sessionOrder.session_id == 0) {
+        if (sessionOrder.status_id == 0) {
             throw new Error('Pedido já foi pago');
         }
 
