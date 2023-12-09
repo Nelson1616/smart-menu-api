@@ -530,7 +530,7 @@ class SocketController {
             throw new Error(`sessão de id ${sessionId} não encontrada`);
         }
 
-        if (session.id == 0) {
+        if (session.status_id == 0) {
             this.io.to(this.sessionUsersRoom(session.table.restaurant_id, session.table.id))
                 .emit(this.sessionUsersEvent, {
                     'session' : session,
@@ -561,7 +561,7 @@ class SocketController {
             throw new Error(`sessão de id ${sessionId} não encontrada`);
         }
 
-        if (session.id == 0) {
+        if (session.status_id == 0) {
             this.io.to(this.sessionOrdersRoom(session.table.restaurant_id, session.table.id))
                 .emit(this.sessionOrdersEvent, {
                     'session' : session,
