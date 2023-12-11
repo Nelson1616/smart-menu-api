@@ -192,7 +192,11 @@ class SessionOrdersService {
                 id: sessionOrderId,
             },
             include: {
-                sessionOrderUser: true
+                sessionOrderUser: {
+                    where: {
+                        status_id: 1
+                    }
+                }
             }
         });
 
